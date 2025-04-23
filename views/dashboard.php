@@ -1,17 +1,34 @@
 <?php
 require_once '../models/UserModel.php';
+require_once '../models/RolePermModel.php';
 
 // Session_start();
 session_start();
 
 $current_user = $_SESSION['user'];
-if(!$current_user) {
+if (! $current_user) {
     header('location: ../index.php');
     exit();
 }
 
-$userModel = new UserModel();
-$recentUsers = $userModel->getRecentUsers();
+$userModel     = new UserModel();
+$recentUsers   = $userModel->getRecentUsers();
+$rolePermModel = new RolePermModel();
+
+// Get permissions by role Id
+$permissions = $rolePermModel->getPerByRoleId($current_user['role_id']);
+
+// Helper function to check permissions
+function hasPermission($permissionKey, $featureName, $permissions)
+{
+    foreach ($permissions as $permission) {
+        if ($permission['feature_name'] === $featureName) {
+            if ($permission['permission_name'] === $permissionKey) {
+                return 1;
+            }
+        }
+    }
+}
 
 ?>
 <!DOCTYPE html>
@@ -56,7 +73,7 @@ $recentUsers = $userModel->getRecentUsers();
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
-            <nav class="col-md-3 col-lg-2 d-md-block sidebar bg-dark">
+            <nav class="col-2 d-md-block sidebar bg-dark">
                 <div class="position-sticky pt-3">
                     <h4 class="text-white px-3 mb-4">
                         <i class="bi bi-shield-lock"></i> Admin Panel
@@ -70,24 +87,28 @@ $recentUsers = $userModel->getRecentUsers();
                         </li>
 
                         <!-- Users Menu -->
-                        <li class="nav-item">
-                            <a class="nav-link" href="./roles/create.php">
-                                <i class="bi bi-people"></i> Users
-                                <span class="badge bg-success float-end">
-                                    <i class="bi bi-plus"></i>
-                                </span>
-                            </a>
-                        </li>
+                        <?php if (hasPermission('Create', 'Users', $permissions)): ?>
+                            <li class="nav-item">
+                                <a class="nav-link" href="./users/create.php">
+                                    <i class="bi bi-people"></i> Users
+                                    <span class="badge bg-success float-end">
+                                        <i class="bi bi-plus"></i>
+                                    </span>
+                                </a>
+                            </li>
+                        <?php endif; ?>
 
                         <!-- Roles Menu -->
-                        <li class="nav-item">
-                            <a class="nav-link" href="./roles/create.php">
-                                <i class="bi bi-shield-check"></i> Roles
-                                <span class="badge bg-success float-end">
-                                    <i class="bi bi-plus"></i>
-                                </span>
-                            </a>
-                        </li>
+                        <?php if (hasPermission('Create', 'Roles', $permissions)): ?>
+                            <li class="nav-item">
+                                <a class="nav-link" href="./roles/create.php">
+                                    <i class="bi bi-shield-check"></i> Roles
+                                    <span class="badge bg-success float-end">
+                                        <i class="bi bi-plus"></i>
+                                    </span>
+                                </a>
+                            </li>
+                        <?php endif; ?>
 
                         <li class="nav-item mt-4">
                             <a class="nav-link" href="profile.php">
@@ -105,7 +126,7 @@ $recentUsers = $userModel->getRecentUsers();
             </nav>
 
             <!-- Main Content -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+            <main class="col-10 px-md-4 py-4">
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                     <h2>
                         <i class="bi bi-speedometer2"></i> Dashboard
@@ -127,12 +148,16 @@ $recentUsers = $userModel->getRecentUsers();
                                     <i class="bi bi-people"></i> User Management
                                 </h5>
                                 <p class="card-text">Manage all system users</p>
-                                <a href="./users/userList.php" class="btn btn-primary">
-                                    <i class="bi bi-list"></i> View Users
-                                </a>
-                                <a href="./users/create.php" class="btn btn-success">
-                                    <i class="bi bi-plus"></i> Add New
-                                </a>
+                                <?php if (hasPermission('Read', 'Users', $permissions)): ?>
+                                    <a href="./users/userList.php" class="btn btn-primary">
+                                        <i class="bi bi-list"></i> View Users
+                                    </a>
+                                <?php endif; ?>
+                                <?php if (hasPermission('Create', 'Users', $permissions)): ?>
+                                    <a href="./users/create.php" class="btn btn-success">
+                                        <i class="bi bi-plus"></i> Add New
+                                    </a>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -144,12 +169,16 @@ $recentUsers = $userModel->getRecentUsers();
                                     <i class="bi bi-shield-check"></i> Role Management
                                 </h5>
                                 <p class="card-text">Manage user roles and permissions</p>
-                                <a href="./roles/rolesList.php" class="btn btn-primary">
-                                    <i class="bi bi-list"></i> View Roles
-                                </a>
-                                <a href="./roles/create.php" class="btn btn-success">
-                                    <i class="bi bi-plus"></i> Add New
-                                </a>
+                                <?php if (hasPermission('Read', 'Roles', $permissions)): ?>
+                                    <a href="./roles/rolesList.php" class="btn btn-primary">
+                                        <i class="bi bi-list"></i> View Roles
+                                    </a>
+                                <?php endif; ?>
+                                <?php if (hasPermission('Create', 'Roles', $permissions)): ?>
+                                    <a href="./roles/create.php" class="btn btn-success">
+                                        <i class="bi bi-plus"></i> Add New
+                                    </a>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -180,17 +209,21 @@ $recentUsers = $userModel->getRecentUsers();
                                             <td><?php echo $user['id']; ?></td>
                                             <td><?php echo htmlspecialchars($user['name']); ?></td>
                                             <td><?php echo htmlspecialchars($user['username']); ?></td>
-                                            <td><?php echo $user['role_id']; ?></td>
+                                            <td><?php echo $user['role_name']; ?></td>
                                             <td>
-                                                <a href="users.php?action=edit&id=<?php echo $user['id']; ?>"
-                                                    class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-pencil"></i>
-                                                </a>
-                                                <a href="users.php?action=delete&id=<?php echo $user['id']; ?>"
-                                                    class="btn btn-sm btn-outline-danger"
-                                                    onclick="return confirm('Are you sure?')">
-                                                    <i class="bi bi-trash"></i>
-                                                </a>
+                                                <?php if (hasPermission('Update', 'Users', $permissions)): ?>
+                                                    <a href="users/edit.php?user_id=<?php echo $user['id']; ?>"
+                                                        class="btn btn-sm btn-outline-primary">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                <?php endif; ?>
+                                                <?php if (hasPermission('Delete', 'Users', $permissions)): ?>
+                                                    <a href="../actions/deleteUser.php?user_id=<?php echo $user['id']; ?>"
+                                                        class="btn btn-sm btn-outline-danger"
+                                                        onclick="return confirm('Are you sure?')">
+                                                        <i class="bi bi-trash"></i>
+                                                    </a>
+                                                <?php endif; ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>

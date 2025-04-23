@@ -12,30 +12,22 @@ if (! $current_user) {
 $userModel = new UserModel();
 
 if (isset($_POST)) {
+    $id = $_POST['user_id'];
     $name = $_POST['name'];
     $email = $_POST['email'];
     $username = $_POST['username'];
-    $password = $_POST['password'];
-    $confirmPassword = $_POST['confirm_password'];
     $roleId = $_POST['role'];
 
     // Check if user already exists
     $user = $userModel->getUserByUsername($username);
-    if ($user) {
+    if ($user && $user['username'] !== $username) {
         $_SESSION['user_error'] = "User already exists";
-        header('location: ../views/users/create.php');
+        header('location: ../views/users/edit.php');
         exit;
     }
 
-    // Check for password
-    if ($password !== $confirmPassword) {
-        $_SESSION['user_error'] = "Password does not match";
-        header('location: ../views/users/create.php');
-        exit;
-    }
-
-    // Create a new User
-    $data = $userModel->createUser($name, $email,  $username, $password, $roleId);
+    // Update User
+    $data = $userModel->updateUser($id, $name, $email,  $username,  $roleId);
 
     if ($data) {
         header('location: ../views/dashboard.php');

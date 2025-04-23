@@ -1,10 +1,12 @@
 <?php
 require_once __DIR__ . '/../config/db_connection.php';
 
-class PermissionsModel {
+class PermissionsModel
+{
     private $db;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->db = Db_connection::getInstance()->getConnection();
     }
 
@@ -12,7 +14,8 @@ class PermissionsModel {
      * Get Permissions
      * @return array
      */
-    public function getAllPermissions() {
+    public function getAllPermissions()
+    {
         $query = "SELECT * FROM permissions";
         $stmt = $this->db->prepare($query);
         $stmt->execute();
@@ -20,16 +23,14 @@ class PermissionsModel {
         return $result->fetch_all(MYSQLI_ASSOC);
     }
 
-    /**
-     * Add permissions
-     *
-     */
-    public function addPermissions($permission, $featureId) {
-        $query = "INSERT INTO permissions  (name, feature_id) VALUES (?, ?)";
+    // Get permission By Name and Feature Id
+    public function getPermByNameAndId($permName, $featureId)
+    {
+        $query = "SELECT id FROM permissions WHERE name = ? AND feature_id = ?";
         $stmt = $this->db->prepare($query);
-        $stmt->bind_param("si", $permission, $featureId);
-        if($stmt->execute()) {
-            return $this->db->insert_id;
-        }
+        $stmt->bind_param("si", $permName, $featureId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_assoc();
     }
 }

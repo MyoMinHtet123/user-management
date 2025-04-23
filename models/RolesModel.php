@@ -9,6 +9,26 @@ class RoleModel
         $this->db = Db_connection::getInstance()->getConnection();
     }
 
+    // Get role by Id
+    public function getRoleById($id)
+    {
+        $stmt = $this->db->prepare("SELECT * FROM roles WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_assoc();
+    }
+
+    // Get role by name
+    public function getRoleByName($roleName)
+    {
+        $stmt = $this->db->prepare("SELECT * FROM roles WHERE name = ?");
+        $stmt->bind_param("s", $roleName);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_assoc();
+    }
+
     // Get all roles
     public function getAllRoles(): array
     {
@@ -53,5 +73,23 @@ class RoleModel
         }
 
         return false; // Insert failed
+    }
+
+    // Update role name
+    public function updateRole($roleId, $roleName)
+    {
+        $updateStmt = $this->db->prepare("UPDATE roles SET name = ? WHERE id = ?");
+        $updateStmt->bind_param("si", $roleName, $roleId);
+        if ($updateStmt->execute()) {
+            return $this->getRoleById($roleId);
+        }
+    }
+
+    // Delete role 
+    public function deleteRole($roleId)
+    {
+        $deleteStmt = $this->db->prepare("DELETE FROM roles WHERE id = ?");
+        $deleteStmt->bind_param('i', $roleId);
+        return $deleteStmt->execute();
     }
 }
